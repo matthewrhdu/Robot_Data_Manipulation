@@ -2,7 +2,6 @@ import open3d as o3d
 from sklearn.cluster import DBSCAN
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from open3d.cpu.pybind.geometry import OrientedBoundingBox, AxisAlignedBoundingBox
 from typing import Callable, Union
 
@@ -30,8 +29,12 @@ def run_dbscan(point_cloud: np.ndarray):
     min_to_be_classified_as_a_cluster = len(x) // 100
 
     # Run DBSCAN. The fit method will populate the .label_ parameter with 0 to n - 1, where n is the number of clusters.
-    dbscan = DBSCAN(eps=0.025, min_samples=min_to_be_classified_as_a_cluster)
+    dbscan = DBSCAN(eps=0.05, min_samples=min_to_be_classified_as_a_cluster)
     dbscan.fit(matrix)
+
+    # ax = plt.axes(projection='3d')
+    # ax.scatter(matrix[:, 0], matrix[:, 1], matrix[:, 2], c=dbscan.labels_)
+    # plt.show()
 
     clusters = {}
     for label_index in range(len(dbscan.labels_)):
@@ -43,7 +46,26 @@ def run_dbscan(point_cloud: np.ndarray):
 
         clusters[label].append(matrix[label_index])
 
-    return [np.array(cluster) for cluster in clusters.values() if len(cluster) >= 400]
+    matrix2 = []
+    for cluster in clusters.values():
+        if len(cluster) >= 400:
+            matrix2.extend(cluster)
+    matrix2 = np.array(matrix2)
+
+    dbscan2 = DBSCAN(eps=0.05, min_samples=min_to_be_classified_as_a_cluster)
+    dbscan2.fit(matrix2)
+
+    clusters2 = {}
+    for label_index in range(len(dbscan.labels_)):
+        label = dbscan.labels_[label_index]
+
+        # Add to `clusters` dict
+        if label not in clusters2:
+            clusters2[label] = []
+
+        clusters2[label].append(matrix[label_index])
+
+    return [np.array(item) for item in clusters2.values() if len(item) >= 400]
 
 
 def draw_bounding_box(data: np.ndarray, box_type: Callable) -> Union[OrientedBoundingBox, AxisAlignedBoundingBox]:
@@ -77,27 +99,39 @@ def get_axes(points: np.ndarray, center: np.ndarray):
 
 
 def main(filename):
-    data_points = read_data(filename)
+    data_points= read_data(filename)
 
-    ax = plt.axes(projection="3d")
-    plt.title("Raw Data")
-    ax.plot(data_points[:, 0], data_points[:, 1], data_points[:, 2], 'b.')
-    plt.show()
+    # ax = plt.axes(projection="3d")
+    # plt.title("Raw Data")
+    # ax.plot(data_points[:, 0], data_points[:, 1], data_points[:, 2], 'b.')
+    # plt.show()
 
     pcd_points = run_ransac(data_points, 0.02)
-    ax = plt.axes(projection="3d")
-    plt.title("Data after RANSAC")
-    ax.plot(pcd_points[:, 0], pcd_points[:, 1], pcd_points[:, 2], 'b.')
-    plt.show()
+    # ax = plt.axes(projection="3d")
+    # plt.title("Data after RANSAC")
+    # ax.plot(pcd_points[:, 0], pcd_points[:, 1], pcd_points[:, 2], 'b.')
+    # plt.show()
 
     filtered_clusters = run_dbscan(pcd_points)
 
     n = 1
     for points in filtered_clusters:
         bounding_box = draw_bounding_box(points, OrientedBoundingBox)
-        box_points = np.array(bounding_box.get_box_points())
+        box_pts = np.array(bounding_box.get_box_points())
+        center = np.array(bounding_box.get_center())
+
+        box_points = []
+        for point in box_pts:
+            box_points.append(point)
+        box_center = np.array(bounding_box.get_center())
+
+        box_points = np.array(box_points)
+
+        # box_points = box_pts
+        # box_center = np.asarray(bounding_box.get_center())
+
         box = [(box_points[i], box_points[j]) for i in range(box_points.shape[0]) for j in range(box_points.shape[0])]
-        axis1, axis2 = get_axes(box_points, np.asarray(bounding_box.get_center()))
+        axis1, axis2 = get_axes(box_points, box_center)
 
         print(len(points))
 
@@ -105,11 +139,11 @@ def main(filename):
         ax = fig.add_subplot(projection="3d")
         # plt.title(f"Object {n}")
 
-        ax.set_xlim3d(-0.2, 0)
-        ax.set_ylim3d(-0.2, 0)
-        ax.set_zlim3d(-0.5, -0.3)
+        # ax.set_xlim3d(-0.15, 0)
+        # ax.set_ylim3d(-0.15, 0)
+        # ax.set_zlim3d(-0.5, -0.35)
 
-        ax.plot(points[:, 0], points[:, 1], points[:, 2], 'b.')
+        # ax.plot(points[:, 0], points[:, 1], points[:, 2], 'b.')
         for pair in box:
             ax.plot((pair[0][0], pair[1][0]), (pair[0][1], pair[1][1]), (pair[0][2], pair[1][2]), 'r-')
 

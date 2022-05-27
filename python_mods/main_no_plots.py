@@ -41,7 +41,7 @@ def run_dbscan(point_cloud: np.ndarray):
 
         clusters[label].append(matrix[label_index])
 
-    return [np.array(cluster) for cluster in clusters.values() if len(cluster) >= 400]
+    return np.array([np.array(cluster) for cluster in clusters.values() if len(cluster) >= 400])
 
 
 def draw_bounding_box(data: np.ndarray, box_type: Callable) -> Union[OrientedBoundingBox, AxisAlignedBoundingBox]:
@@ -78,11 +78,18 @@ def main(filename):
 
     for points in filtered_clusters:
         bounding_box = draw_bounding_box(points, OrientedBoundingBox)
-        box_points = np.array(bounding_box.get_box_points())
+        box_points = np.asarray(bounding_box.get_box_points())
         box_center = np.array(bounding_box.get_center())
 
         angles = get_axes(box_points)
-        print(box_center.tolist())
+
+        transformation_matrix = np.array([
+            np.array([-1, 0, 0, box_center[0]]),
+            np.array([0, -1, 0, box_center[1]]),
+            np.array([0, 0, -1, box_center[2]])
+        ])
+
+        print(transformation_matrix)
         print(angles)
 
 

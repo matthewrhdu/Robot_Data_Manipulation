@@ -92,8 +92,14 @@ def do_useful_stuff(process_image):
         box_points = np.array(bounding_box.get_box_points())
         box_center = np.array(bounding_box.get_center())
 
+        transformation_matrix = np.array([
+            np.array([-1, 0, 0, box_center[0]]),
+            np.array([0, -1, 0, box_center[1]]),
+            np.array([0, 0, -1, box_center[2]])
+        ])
+
         angles = get_axes(box_points)
-        process_image.get_logger().info(str(box_center.tolist()))
+        process_image.get_logger().info(str(transformation_matrix))
         process_image.get_logger().info(str(angles))
 
 
