@@ -15,7 +15,6 @@ def read_data(filename: str) -> np.ndarray:
     else:
         raise FileNotFoundError
 
-
 def run_ransac(pcd: np.ndarray, threshold: float):
     point_cloud = o3d.geometry.PointCloud()
     point_cloud.points = o3d.utility.Vector3dVector(pcd)
@@ -27,13 +26,14 @@ def run_ransac(pcd: np.ndarray, threshold: float):
 def run_dbscan(point_cloud: np.ndarray):
     x, y, z = point_cloud[:, 0], point_cloud[:, 1], point_cloud[:, 2]
 
-    matrix = np.column_stack((x, y, z))
+    mask = z <= min(z) + (max(z) - min(z)) / 2
+    matrix = np.column_stack((x[mask], y[mask], z[mask]))
 
     # matrix = np.column_stack((x, y, z))
     min_to_be_classified_as_a_cluster = len(x) // 100
 
     # Run DBSCAN. The fit method will populate the .label_ parameter with 0 to n - 1, where n is the number of clusters.
-    dbscan = DBSCAN(eps=0.025, min_samples=min_to_be_classified_as_a_cluster)
+    dbscan = DBSCAN(eps=0.05, min_samples=min_to_be_classified_as_a_cluster)
     dbscan.fit(matrix)
 
     clusters = {}
@@ -48,7 +48,7 @@ def run_dbscan(point_cloud: np.ndarray):
 
     print(len(clusters))
 
-    return [np.array(item) for item in clusters.values()]
+    return [np.array(item) for item in clusters.values() if len(item) >= 400]
 
 
 def draw_bounding_box(data: np.ndarray, box_type: Callable) -> Union[OrientedBoundingBox, AxisAlignedBoundingBox]:
@@ -71,22 +71,15 @@ def get_axis_lines(points: np.ndarray, center: np.ndarray):
 
 def main2(filename):
     data_points = read_data(filename)
+    print(data_points)
+    # pcd_points = run_ransac(data_points, 0.025)
 
-    pcd_points = run_ransac(data_points, 0.025)
-
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(pcd_points)
-    o3d.visualization.draw_geometries([pcd], width=1920 // 2, height=1080 // 2)
-
+    pcd_points = data_points
     filtered_clusters = run_dbscan(pcd_points)
 
     n = 1
     dataset = []
     for points in filtered_clusters:
-        pcd = o3d.geometry.PointCloud()
-        pcd.points = o3d.utility.Vector3dVector(points)
-        o3d.visualization.draw_geometries([pcd], width=1920 // 2, height=1080 // 2)
-
         bounding_box = draw_bounding_box(points, OrientedBoundingBox)
         box_pts = np.array(bounding_box.get_box_points())
 
@@ -108,7 +101,6 @@ def main2(filename):
         axis1, axis2, axis3 = get_axis_lines(box_points, box_center)
 
         print(len(points))
-
         dataset.append([points[:, 0], points[:, 1], points[:, 2], 'b.'])
         for pair in box:
             dataset.append([(pair[0][0], pair[1][0]), (pair[0][1], pair[1][1]), (pair[0][2], pair[1][2]), 'r-'])
@@ -121,8 +113,12 @@ def main2(filename):
         dataset.append([perp_axis[:, 0], perp_axis[:, 1], perp_axis[:, 2], 'g-'])
         dataset.append([line_axis[:, 0], line_axis[:, 1], line_axis[:, 2], 'c-'])
         n += 1
-
     ax = plt.axes(projection="3d")
+
+    # ax.set_xlim3d(-0.15, 0.15)
+    # ax.set_ylim3d(-0.15, 0.15)
+    # ax.set_zlim3d(-0.5, -0.2)
+
     for s in dataset:
         if s[3] not in ['m-', 'g-', 'c-']:
             ax.plot(*s)
@@ -135,4 +131,4 @@ def main2(filename):
 
 
 if __name__ == "__main__":
-    main2("pov_images/acc.npy")
+    main2("combined.npy")

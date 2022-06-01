@@ -1,13 +1,16 @@
+import matplotlib.pyplot as plt
 import open3d as o3d
 from sklearn.cluster import DBSCAN
 import numpy as np
 from open3d.cpu.pybind.geometry import OrientedBoundingBox, AxisAlignedBoundingBox
 from typing import Callable, Union
+from timeit import timeit
 
 
 def read_data(filename: str) -> np.ndarray:
     """ Read the .ply file with filename (filename includes .ply) and returns an o3d point cloud"""
-    return np.asarray(o3d.io.read_point_cloud(filename).points)
+    # return np.asarray(o3d.io.read_point_cloud(filename).points)
+    return np.load("sample.npy")
 
 
 def run_ransac(pcd: np.ndarray, threshold: float):
@@ -46,8 +49,9 @@ def run_dbscan(point_cloud: np.ndarray):
 
 def draw_bounding_box(data: np.ndarray, box_type: Callable) -> Union[OrientedBoundingBox, AxisAlignedBoundingBox]:
     bounding_box = box_type()
+    data2 = data[:, 0:3]
 
-    pcd = o3d.utility.Vector3dVector(data)
+    pcd = o3d.utility.Vector3dVector(data2)
     box = bounding_box.create_from_points(pcd)
     return box
 
@@ -63,7 +67,7 @@ def get_axes(points: np.ndarray):
 
     side_order = list(sides.keys())
     side_order.sort()
-
+    # print(sides)
     next_largest = side_order[1]
 
     side_vec = sides[next_largest][0] - sides[next_largest][1]
@@ -77,19 +81,23 @@ def main(filename):
     filtered_clusters = run_dbscan(pcd_points)
 
     for points in filtered_clusters:
+        ax = plt.axes(projection='3d')
+        ax.plot(points[:, 0], points[:, 1], points[:, 2], 'r.')
+        plt.show()
+
         bounding_box = draw_bounding_box(points, OrientedBoundingBox)
         box_points = np.asarray(bounding_box.get_box_points())
         box_center = np.array(bounding_box.get_center())
 
         angles = get_axes(box_points)
 
-        transformation_matrix = np.array([
-            np.array([-1, 0, 0, box_center[0]]),
-            np.array([0, -1, 0, box_center[1]]),
-            np.array([0, 0, -1, box_center[2]])
-        ])
+        # transformation_matrix = np.array([
+        #     np.array([-1, 0, 0, box_center[0]]),
+        #     np.array([0, -1, 0, box_center[1]]),
+        #     np.array([0, 0, -1, box_center[2]])
+        # ])
 
-        print(transformation_matrix)
+        print(box_center)
         print(angles)
 
 
@@ -97,4 +105,4 @@ if __name__ == "__main__":
     # for i in range(6):
     #     print(f"expected: {i + 1} items")
     #     main(f"Data/img{i}.ply")
-    main("Data/img0.ply")
+    main("Data/img1.ply")

@@ -368,7 +368,7 @@ while True:
         cv2.imwrite('./out.png', out)
 
     if key == ord("e"):
-        points.export_to_ply('./img5.ply', mapped_frame)
+        points.export_to_ply('Data/sample.ply', mapped_frame)
         print("captured")
 
     if key in (27, ord("q")) or cv2.getWindowProperty(state.WIN_NAME, cv2.WND_PROP_AUTOSIZE) < 0:
