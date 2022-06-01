@@ -20,65 +20,6 @@ def clean_data(data: np.ndarray):
     return np.column_stack((x[mask], y[mask], z[mask]))
 
 
-def run_dbscan(point_cloud: np.ndarray):
-    x, y, z = point_cloud[:, 0], point_cloud[:, 1], point_cloud[:, 2]
-    if len(x) // 2000 > 0:
-        size = len(x) // 2000
-    else:
-        size = 1
-    matrix = np.column_stack((x[::size], y[::size], z[::size]))
-
-    # matrix = np.column_stack((x, y, z))
-    min_to_be_classified_as_a_cluster = len(x) // 100
-
-    # Run DBSCAN. The fit method will populate the .label_ parameter with 0 to n - 1, where n is the number of clusters.
-    dbscan = DBSCAN(eps=0.025, min_samples=min_to_be_classified_as_a_cluster)
-    # dbscan = KMeans(n_clusters=6, n_init=6, max_iter=100)
-    dbscan.fit(matrix)
-
-    clusters = {}
-    for label_index in range(len(dbscan.labels_)):
-        label = dbscan.labels_[label_index]
-
-        # Add to `clusters` dict
-        if label not in clusters:
-            clusters[label] = []
-
-        clusters[label].append(matrix[label_index])
-
-    print(len(clusters))
-
-    return [np.array(item) for item in clusters.values() if len(item) >= 800]
-
-
-def run_kmeans(point_cloud: np.ndarray):
-    x, y, z = point_cloud[:, 0], point_cloud[:, 1], point_cloud[:, 2]
-
-    matrix = np.column_stack((x, y, z))
-
-    # matrix = np.column_stack((x, y, z))
-    min_to_be_classified_as_a_cluster = len(x) // 100
-
-    # Run DBSCAN. The fit method will populate the .label_ parameter with 0 to n - 1, where n is the number of clusters.
-    # dbscan = DBSCAN(eps=0.025, min_samples=min_to_be_classified_as_a_cluster)
-    dbscan = KMeans(n_clusters=8, n_init=10, max_iter=100)
-    dbscan.fit(matrix)
-
-    clusters = {}
-    for label_index in range(len(dbscan.labels_)):
-        label = dbscan.labels_[label_index]
-
-        # Add to `clusters` dict
-        if label not in clusters:
-            clusters[label] = []
-
-        clusters[label].append(matrix[label_index])
-
-    print(len(clusters))
-
-    return [np.array(item) for item in clusters.values() if len(item) >= 1000]
-
-
 def draw_bounding_box(data: np.ndarray, box_type: Callable) -> Union[OrientedBoundingBox, AxisAlignedBoundingBox]:
     bounding_box = box_type()
 

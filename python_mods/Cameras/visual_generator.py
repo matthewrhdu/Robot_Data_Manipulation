@@ -1,7 +1,7 @@
 import open3d as o3d
 
 
-pcd = o3d.io.read_point_cloud(f"Data/img1.ply")
+pcd = o3d.io.read_point_cloud(f"../Data/img1.ply")
 # o3d.visualization.draw_geometries([pcd])
 plane_model, inliers = pcd.segment_plane(distance_threshold=0.02, ransac_n=3, num_iterations=100)
 
