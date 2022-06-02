@@ -1,6 +1,6 @@
 import numpy as np
 import open3d as o3d
-
+from random import randint
 
 def read_data(filename: str) -> np.ndarray:
     """ Read the .ply file with filename (filename includes .ply) and returns an o3d point cloud"""
@@ -26,7 +26,7 @@ def get_box(box_points: np.ndarray):
 
 
 def visualize_helper(clusters: dict):
-    colours = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [0, 1, 1], [1, 0, 1]]
+    colours = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1], [0, 0, 0], [1, 0, 1]] + [[randint(10, 100) / 100 for s in range(3)] for _ in range(10)]
     q = 0
     vectors = []
     for key in clusters:
@@ -36,7 +36,6 @@ def visualize_helper(clusters: dict):
         vec.paint_uniform_color(colours[q])
         vectors.append(vec)
 
-        o3d.visualization.draw_geometries(vectors)
         q += 1
 
-    o3d.visualization.draw_geometries(vectors)
+    o3d.visualization.draw_geometries(vectors, width=800, height=600)

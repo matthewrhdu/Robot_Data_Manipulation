@@ -14,4 +14,9 @@ def draw_bounding_box(data: np.ndarray, box_type: Callable) -> Union[OrientedBou
 
 def get_axis_lines(points: np.ndarray, center: np.ndarray):
     p1, p2, p3, p4 = points[:4]
+    print([
+        (p2 - p1).tolist(),
+        (p3 - p1).tolist(),
+        (p4 - p1).tolist()
+    ])
     return lambda x: (p2 - p1) * x + center, lambda y: (p3 - p1) * y + center, lambda z: (p4 - p1) * z + center
