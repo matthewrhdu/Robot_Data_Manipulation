@@ -37,7 +37,7 @@ def segment_point_cloud(data_source: Union[str, np.ndarray], use_ransac: bool = 
             print(f"[use_ransac]: {len(data_points)} points after RANSAC")
 
     # Find Clusters
-    filtered_clusters, clusters = run_dbscan(data_points, epsilon=0.025, threshold=500)
+    filtered_clusters, clusters = run_dbscan(data_points, epsilon=0.04, threshold=500)
 
     if debug:
         for i in range(len(filtered_clusters)):
@@ -59,10 +59,10 @@ def segment_point_cloud(data_source: Union[str, np.ndarray], use_ransac: bool = 
 
             # Saving points
             if to_save:
-                np.save(f"pov_images/acc_{n}.npy", points)
-                np.save(f"pov_images/acc_{n}_x.npy", points[:, 0])
-                np.save(f"pov_images/acc_{n}_y.npy", points[:, 1])
-                np.save(f"pov_images/acc_{n}_z.npy", points[:, 2])
+                np.save(f"../Data/pov_images/new_images/object_{n}.npy", points)
+                np.save(f"../Data/pov_images/new_images/object_{n}_x.npy", points[:, 0])
+                np.save(f"../Data/pov_images/new_images/object_{n}_y.npy", points[:, 1])
+                np.save(f"../Data/pov_images/new_images/object_{n}_z.npy", points[:, 2])
 
             if debug:
                 # Saving the points to be drawn.
@@ -105,4 +105,5 @@ def segment_point_cloud(data_source: Union[str, np.ndarray], use_ransac: bool = 
 
 
 if __name__ == "__main__":
-    segment_point_cloud("../../_3D_Object_Recognition/pov_images/acc.npy", use_ransac=False)
+    filename = "../Data/pov_images/images2/img_combined.npy"
+    segment_point_cloud(filename, use_ransac=False, to_save=True)

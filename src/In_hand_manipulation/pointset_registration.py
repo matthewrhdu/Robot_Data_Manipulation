@@ -1,3 +1,9 @@
+"""
+Created By: Matthew Du (matthew.du@mail.utoronto.ca)
+Date: 14-06-2022
+
+This module contains code for point cloud alignment intended for the use of in-hand manipulation
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2 as cv
@@ -153,7 +159,7 @@ def main() -> int:
 
     :return: Exit code
     """
-    img = cv.imread("img.png")
+    img = cv.imread("img_0.png")
     contours = find_contours(img)
 
     source, target = get_objects(contours)

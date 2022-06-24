@@ -296,7 +296,7 @@ while True:
         depth_frame = decimate.process(depth_frame)
 
         # Grab new intrinsics (may be changed by decimation)
-        depth_intrinsics = rs.ideo_stream_profile(
+        depth_intrinsics = rs.video_stream_profile(
             depth_frame.profile).get_intrinsics()
         w, h = depth_intrinsics.width, depth_intrinsics.height
 

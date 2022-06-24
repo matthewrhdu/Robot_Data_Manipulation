@@ -1,14 +1,41 @@
 from __future__ import annotations
 import pygame
 import numpy as np
-import math
-from typing import Optional, List
 
-filename = "acc.npy"  # CHANGE ME!!!!
+matrices = [
+    np.array(
+        [
+            np.array([0, 1, 0]),
+            np.array([0, 0, 1]),
+            np.array([0, 0, 0])
+        ]
+    ),
+    np.array(
+        [
+            np.array([1, 0, 0]),
+            np.array([0, 0, 1]),
+            np.array([0, 0, 0])
+        ]
+    ),
+    np.array(
+        [
+            np.array([1, 0, 0]),
+            np.array([0, 1, 0]),
+            np.array([0, 0, 0])
+        ]
+    )
+]
+
+# filename = f"../Data/pov_images/new_images/object_5.npy"  # CHANGE ME!!!!
+filename = "../Data/pov_images/images2/image4_cleaned.npy"  # CHANGE ME!!!!
+# write_filename = f"{filename[:-len('.npy')]}_cleaned.npy"
+write_filename = filename
+
+matrix = matrices[1]
 
 # Setup the screen
 background_colour = (0, 0, 0)
-width, height = 1800, 1000
+width, height = 900, 500
 screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption('Simulation')
 
@@ -18,7 +45,7 @@ WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 
 
-start_x, start_y = width // 2, 6 * height // 8
+start_x, start_y = width // 2, height // 2
 spacing = 500
 
 
@@ -67,16 +94,9 @@ class Particle:
 # Main code
 def main():
     pts = np.load(filename)
-    matrix = np.array(
-        [
-            np.array([1, -0.5 ** 0.5, 0]),
-            np.array([0, -0.5 ** 0.5, 1]),
-            np.array([0, 0, 0])
-        ]
-    )
 
     pts_t = np.array([np.matmul(matrix, pt) for pt in pts])
-    my_particles = [Particle(pts_t[pt_id][0], pts_t[pt_id][1], 3, pts[pt_id]) for pt_id in range(len(pts_t))]
+    my_particles = [Particle(pts_t[pt_id][0], pts_t[pt_id][1], 2, pts[pt_id]) for pt_id in range(len(pts_t))]
 
     box = Box()
     starting = False
@@ -125,8 +145,7 @@ def main():
         pygame.display.flip()
 
     remaining = np.array([pt.raw_point for pt in my_particles])
-    np.save(f"{filename[:-len('.npy')]}_cleaned.npy", remaining)
+    np.save(write_filename, remaining)
+    print("saved")
 
-
-if __name__ == '__main__':
-    main()
+main()

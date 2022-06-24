@@ -10,7 +10,7 @@ def setup_camera() -> Tuple[rs.pipeline, rs.config, rs.sensor]:
     :return: The pipeline, configuration, and sensor
     """
     # Configure depth and color streams
-    pipeline = rs.pipeline(None)
+    pipeline = rs.pipeline()
     config = rs.config()
 
     pipeline_wrapper = rs.pipeline_wrapper(pipeline)
@@ -89,16 +89,17 @@ def main(num: int, visualize: bool = True) -> None:
     :return: None
     """
     pipeline, configs, sensor = setup_camera()
-    transform_matrix = np.loadtxt(f"../TransformationMatrices/camera2base_matrix_for_image_{num}.txt")
+    transform_matrix = np.loadtxt(f"../TransformationMatrices/camera2base_matrix_for_image_new{num}.txt")
 
     pcd_points = capture_point_cloud_xyz(pipeline, configs)
 
     arm_view_coordinates = []
     for pt in pcd_points:
-        new_pt = np.matmul(transform_matrix, pt)
-        arm_view_coordinates.append(new_pt)
+        new_pt = np.array(pt.tolist() + [1])
+        transformed = np.matmul(transform_matrix, new_pt)
+        arm_view_coordinates.append(transformed[:3])
 
-    output_filename = f"image.npy"
+    output_filename = f"images2/image{num}.npy"
 
     np.save(output_filename, np.array(arm_view_coordinates))
     print("visualizing...")
@@ -106,8 +107,9 @@ def main(num: int, visualize: bool = True) -> None:
     if visualize:
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(arm_view_coordinates)
-        o3d.visualization.draw_geometries([pcd])
+        o3d.visualization.draw_geometries([pcd], width=800, height=600)
 
 
 if __name__ == '__main__':
-    main(0)
+    for i in range(5):
+        main(i)
