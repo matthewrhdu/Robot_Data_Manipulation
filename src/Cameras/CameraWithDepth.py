@@ -1,5 +1,7 @@
 import numpy as np
 import pyrealsense2 as rs
+import cv2 as cv
+import open3d as o3d
 
 
 def setup_camera():
@@ -48,7 +50,7 @@ def capture_pointcloud_xyz(pipeline, config):
     depth_frame = frames.get_depth_frame()
     color_frame = frames.get_color_frame()
 
-    # Grab new intrinsics (may be changed by decimation)
+    # Grab new intrinsics (maybe changed by decimation)
     rs.video_stream_profile(depth_frame.profile).get_intrinsics()
 
     depth_image = np.asanyarray(depth_frame.get_data())
@@ -56,25 +58,40 @@ def capture_pointcloud_xyz(pipeline, config):
 
     pipeline.stop()
 
-    # Pointcloud data to arrays
-    return None
+    # Point cloud data to arrays
+    return color_image, depth_image
+
+
+def process_positions(img: np.ndarray):
+    draw_img = np.copy(img)
+    img_gray = cv.cvtColor(draw_img, cv.COLOR_BGR2GRAY)
+    img_gray = cv.GaussianBlur(img_gray, (5, 5), 5)
+    img_gray = cv.Canny(img_gray, 100, 200)
+    _, thresh = cv.threshold(img_gray, 127, 255, 0)
+
+    contours, _ = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+
+    cv.drawContours(draw_img, contours, -1, (0, 255, 0), 3)
+    cv.imshow("image", draw_img)
+    cv.waitKey(0)
+
+
+def show_depths(img: np.ndarray):
+    points = np.array([[x, y, img[y][x]] for y in img.shape[0] for x in img.shape[1]])
+
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(points)
+    o3d.visualization.draw_geometries([pcd])
 
 
 def main(transform_position: int):
     pipeline, configs = setup_camera()
-    transform_matrix = np.loadtxt(f"../TransformationMatrices/camera2base_matrix_for_image_{transform_position}.txt")
-    verts = capture_pointcloud_xyz(pipeline, configs)
+    # transform_matrix = np.loadtxt(f"../TransformationMatrices/camera2base_matrix_for_image_{transform_position}.txt")
+    rgb_image, depth_image = capture_pointcloud_xyz(pipeline, configs)
 
-    new_verts = np.ndarray(shape=(verts.shape[0], verts.shape[1] + 1))
-
-    for idx, vt in enumerate(verts):
-        new_verts[idx] = np.append(vt, [1])
-        new_verts[idx] = np.matmul(transform_matrix, new_verts[idx])
-        verts[idx] = [new_verts[idx][0], new_verts[idx][1], new_verts[idx][2]]
-
-    # output_filename = f"image{img_num}.npy"
-    #
-    # np.save(output_filename, verts)
+    for row in depth_image: print(row)
+    cv.imshow("img", rgb_image  )
+    cv.waitKey(0)
 
 
 if __name__ == '__main__':

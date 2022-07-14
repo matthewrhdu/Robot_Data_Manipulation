@@ -1,53 +1,75 @@
 import rclpy
 from in_hand_control.device import Device
-from services.srv import DoThings
+from services.action import ProcessorResponse
 import cv2 as cv
+import cv2.aruco as aruco
 import numpy as np
-from scipy.spatial import ConvexHull
 
 
 class Processor(Device):
     def __init__(self):
-        super().__init__('processor', "processor_command", DoThings)
+        super().__init__('processor', "processor_command", ProcessorResponse)
 
-    def run(self, request, response):
+    def run(self, msg):
         self.get_logger().info("Received Request")
-        dx, dy, dtheta = self.process()
-        if request.stuff == 0:
-            response.dx = dx
-            response.dy = dy
-            response.dtheta = dtheta
+        
+        result = ProcessorResponse.Result()
+        if msg.request.processor_key == 0:
+            # positions = self.process_initial_position()
+            positions = self.temp()
+            for id_ in positions:
+                translations = positions[id_][0]
+                rotations = positions[id_][1]
+
+                response = ProcessorResponse.Feedback()
+                response.dx = float(translations[0])
+                response.dy = float(translations[1])
+                response.dz = float(translations[2])
+                response.dtheta = np.degrees(rotations)
+
+                msg.publish_feedback(response)
+            result.exit_status = 0
         else:
-            response.dx = 0.0
-            response.dy = 0.0
-            response.dtheta = 0.0
+            result.exit_status = 1
         
-        return response
+        msg.succeed()
+        return result
 
-    def process(self):
-        # Take each frame
+    def temp(self):
+        return {0: [np.array([0.0, 0.0, 0.0]), 0.0]}
+
+    def process_initial_position(self):
+        camera_matrix = np.array([
+            [676.8134765625, 0.0, 482.47442626953125],
+            [0.0, 677.247314453125, 276.1454772949219],
+            [0.0, 0.0, 1.0]])
+        dist_coefficients = np.array(([[0, 0, 0, 0, 0]]))
+
         frame = cv.imread("image.png")
-        draw_img = np.copy(frame)
-        img_gray = cv.cvtColor(draw_img, cv.COLOR_BGR2GRAY)
-        img_gray = cv.GaussianBlur(img_gray, (5, 5), 5)
+        shape = frame.shape[:2]
 
-        # _, thresh = cv.threshold(img_gray, 0, 127, 0)
-        _, thresh = cv.threshold(img_gray, 127, 255, 0)
-        
-        img_gray = cv.Canny(thresh, 100, 200)
+        new_camera_mtx, roi = cv.getOptimalNewCameraMatrix(camera_matrix, dist_coefficients, shape, 0, shape)
 
-        contours, _ = cv.findContours(img_gray, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
+        parameters = aruco.DetectorParameters_create()
+        cv.undistort(frame, camera_matrix, dist_coefficients, None, new_camera_mtx)
 
-        obj = contours[0][:, 0]
-        for cont in contours:
-            if len(cont) < len(obj):
-                obj = cont[:, 0]
+        corners, ids, rejected_img_points = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
 
-        hull = ConvexHull(obj)
-        cx = np.mean(hull.points[hull.vertices, 0])
-        cy = np.mean(hull.points[hull.vertices, 1])
+        if ids is None:
+            raise ValueError
 
-        return float(cx), float(cy), 0.0
+        id_to_positions = {}
+        for x in range(len(ids)):
+            rotation_vector, translation_vector, _ = aruco.estimatePoseSingleMarkers(corners[x], 0.025, camera_matrix, dist_coefficients)
+                
+            (rotation_vector - translation_vector).any()  # get rid of that nasty numpy value array error
+
+            id_to_positions[id[x][0]] = [translation_vector[0][0], rotation_vector[0][0]]
+
+        return id_to_positions
+
 
 def main(args=None):
     rclpy.init(args=args)

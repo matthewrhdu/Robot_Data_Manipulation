@@ -21,7 +21,9 @@ setup(
     entry_points={
         'console_scripts': [
             "camera = in_hand_control.camera:main",
+            "camera3d = in_hand_contol.camera3d:main",
             "processor = in_hand_control.processor:main",
+            "processor3d = in_hand_control.processor3d:main",
             "controller = in_hand_control.controller:main",
             "robot = in_hand_control.robot:main",
         ],

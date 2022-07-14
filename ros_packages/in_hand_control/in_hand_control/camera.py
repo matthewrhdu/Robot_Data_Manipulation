@@ -1,10 +1,22 @@
 import rclpy
 from in_hand_control.device import Device
-from services.srv import DoStuff
+# from services.srv import DoStuff
+from services.action import RunCamera
 import cv2 as cv
 import pyrealsense2 as rs
 import cv2
 import numpy as np
+
+def capture_images(pipeline):
+    ## Get frameset of color
+    frames = pipeline.wait_for_frames()  
+    color_frame = frames.get_color_frame()   # get color frame
+
+    ## Get the depth and color image and Convert images to numpy arrays
+    color_image = np.asanyarray(color_frame.get_data())  # color image
+    image_resized = cv2.resize(color_image, (int(1280 / 2), int(720 / 2)))
+
+    return color_image, image_resized
 
 def stuff():
     ## Configure depth and color streams
@@ -40,7 +52,6 @@ def stuff():
     sensor.set_option(rs.option.pre_processing_sharpening, 5)
     sensor.set_option(rs.option.noise_filtering, 6)
 
-
     ## Configure the pipeline to stream different resolutions of color and depth streams
             
     if device_product_line == 'L500':
@@ -51,63 +62,30 @@ def stuff():
             
     ## Start streaming
     profile = pipeline.start(config)  # start the pipeline
-
-
-    def capture_images():
-
-        ## Get frameset of color
-        frames = pipeline.wait_for_frames()  
-        color_frame = frames.get_color_frame()   # get color frame
-        
-        
-        ## Get the depth and color image and Convert images to numpy arrays
-        color_image = np.asanyarray(color_frame.get_data())  # color image
-        
-        image_resized = cv2.resize(color_image,(int(1280/2),int(720/2)))
-
-        return color_image, image_resized
-
-    image_num = 0
     
-    color_image, image_resized = capture_images()
+    color_image, image_resized = capture_images(pipeline)
     
-    image_savepath = "/home/zhanfeng/camera_ws/src/Realsense_python/camera_l515_test/"
-    #image_filename = f'intrinsic_calibration_image_{image_num}.png'
-    #image_filename = f'1007413069_{image_num}.jpg'
-    image_filename = f'vision_guided_grasping_{image_num}.jpg'
-    
-    ##  Show image
-    # cv2.namedWindow('camera l515 RGB image', cv2.WINDOW_AUTOSIZE)
-    # cv2.imshow('camera l515 RGB image', color_image)  # display the RBG images
-
-    key = cv2.waitKey(1)   # the time for image showing in millisecond
-    
-    
-    # Press esc or 'q' to close the image window
-    # if key & 0xFF == ord('q') or key == 27:
-    #     pipeline.stop()
-    #     break
-    # Press space or 's' to save and write the image
     cv2.imwrite("image.png", color_image)
-    image_num += 1
-
-    # cv2.destroyAllWindows()
-
+    
 
 class Camera(Device):
     def __init__(self):
-        super().__init__('camera', 'camera_command', DoStuff)
+        super().__init__('camera', 'camera_command', RunCamera)
 
-    def run(self, request, response):
+    def run(self, msg):
         self.get_logger().info("Received Request")
-        if request.stuff == 0:
+
+        result = RunCamera.Result()
+        if msg.request.configuration == 0:
             self.get_logger().info("Click")
-            stuff()
-            response.status = 0
+            # stuff()
+            result.exit_status = 0
         else:
-            response.status = 1
+            result.exit_status = 1
         
-        return response
+        msg.succeed()
+
+        return result
 
     def take_picture(self):
         cap = cv.VideoCapture(0)

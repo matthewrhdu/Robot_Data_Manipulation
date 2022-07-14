@@ -23,6 +23,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/DoStuff.srv"
   "srv/DoThings.srv"
   "srv/CameraGo.srv"
+  "action/InitiateCamera.action"
+  "action/ProcessorResponse.action"
+  "action/RunCamera.action"
 )
 
 if(BUILD_TESTING)

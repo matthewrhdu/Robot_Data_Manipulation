@@ -6,7 +6,7 @@ import cv2.aruco as aruco
 import pyrealsense2 as rs
 
 
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64, Float32MultiArray
 
 
 def capture_images(pipeline):
@@ -69,6 +69,7 @@ class CameraPublisher(Node):
     def __init__(self):
         super().__init__('minimal_publisher')
         self.publisher_ = self.create_publisher(Float64, 'topic', 10)
+        self.pos_publisher = self.create_publisher(Float64, 'topic2', 10)
 
     def run(self):
         camera_matrix = np.array([[654.68470569, 0.0, 309.89837988],
@@ -90,7 +91,8 @@ class CameraPublisher(Node):
             new_camera_mtx, roi = cv2.getOptimalNewCameraMatrix(camera_matrix, dist_coefficients, shape, 0, shape)
 
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
+            _, gray = cv2.threshold(gray, 80, 256, cv2.THRESH_BINARY)
+            
             aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
             parameters = aruco.DetectorParameters_create()
             cv2.undistort(img, camera_matrix, dist_coefficients, None, new_camera_mtx)
@@ -103,14 +105,18 @@ class CameraPublisher(Node):
                     (rotation_vector - translation_vector).any()  # get rid of that nasty numpy value array error
 
                     for i in range(rotation_vector.shape[0]):
-                        aruco.drawAxis(gray, camera_matrix, dist_coefficients, rotation_vector[i, :, :],
-                                    translation_vector[i, :, :], 0.03)
+                        aruco.drawAxis(gray, camera_matrix, dist_coefficients, rotation_vector[i, :, :], translation_vector[i, :, :], 0.03)
                         aruco.drawDetectedMarkers(gray, corners)
                     
                     msg = Float64()
                     msg.data = np.degrees(float(rotation_vector[0][0][0]))
                     self.publisher_.publish(msg)
                     self.get_logger().info(f'Publishing: {msg.data}')
+
+                    msg2 = Float32MultiArray()
+                    msg2.data = [float(translation_vector[0][0][0]), float(translation_vector[0][0][1]), float(translation_vector[0][0][2])]
+                    self.pos_publisher.publish(msg2)
+                    self.get_logger().info(f'Publishing: {msg2.data}')
                     # print(translation_vector[0][0], np.degrees(float(rotation_vector[0][0][0])))
 
             # Display result frame
@@ -126,8 +132,7 @@ def main(args=None):
     rclpy.init(args=args)
 
     camera_publisher = CameraPublisher()
-
-    rclpy.spin(camera_publisher)
+    camera_publisher.run()
 
     camera_publisher.destroy_node()
     rclpy.shutdown()

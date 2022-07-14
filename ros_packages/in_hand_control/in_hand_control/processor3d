@@ -1,0 +1,43 @@
+import rclpy
+from in_hand_control.device import Device
+from services.srv import DoThings
+import cv2 as cv
+import numpy as np
+from scipy.spatial import ConvexHull
+import object_detection.segment_point_cloud as segment_pcd
+
+class Processor(Device):
+    def __init__(self):
+        super().__init__('processor3d', "processor_command", DoThings)
+
+    def run(self, request, response):
+        self.get_logger().info("Received Request")
+        dx, dy, dz = segment_pcd.segment_point_cloud('image.npy')
+        if request.stuff == 0:
+            response.dx = dx
+            response.dy = dy
+            response.dz = dz
+        else:
+            response.dx = 0.0
+            response.dy = 0.0
+            response.dz = 0.0
+            response.dtheta = 0.0
+        
+        return response
+
+    
+def main(args=None):
+    rclpy.init(args=args)
+
+    processor = Processor()
+    try:
+        rclpy.spin(processor)
+    except KeyboardInterrupt:
+        pass
+
+    processor.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()

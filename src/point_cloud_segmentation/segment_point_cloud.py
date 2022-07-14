@@ -31,7 +31,7 @@ def segment_point_cloud(data_source: Union[str, np.ndarray], use_ransac: bool = 
 
     # Use RANSAC to remove table points
     if use_ransac:
-        data_points = run_ransac(data_points, 0.025)
+        data_points = run_ransac(data_points, 0.01)
 
         if debug:
             print(f"[use_ransac]: {len(data_points)} points after RANSAC")
@@ -105,5 +105,5 @@ def segment_point_cloud(data_source: Union[str, np.ndarray], use_ransac: bool = 
 
 
 if __name__ == "__main__":
-    filename = "../Data/pov_images/images2/img_combined.npy"
-    segment_point_cloud(filename, use_ransac=False, to_save=True)
+    filename = "img4.npy"
+    segment_point_cloud(filename, use_ransac=True, to_save=False)

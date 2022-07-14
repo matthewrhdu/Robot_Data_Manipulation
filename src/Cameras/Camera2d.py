@@ -13,7 +13,7 @@ import re
 
 
 def main():
-	cap = cv.VideoCapture(1)
+	cap = cv.VideoCapture(0)
 	if not cap.isOpened():
 		print("Cannot open camera")
 		exit(1)
@@ -27,29 +27,38 @@ def main():
 			print("Can't receive frame (stream end?). Exiting ...")
 			break
 
+		# draw_img = cv.flip(img, 0)
 		draw_img = np.copy(img)
+
 		img_gray = cv.cvtColor(draw_img, cv.COLOR_BGR2GRAY)
 		img_gray = cv.GaussianBlur(img_gray, (5, 5), 5)
+		_, img_gray = cv.threshold(img_gray, 127, 255, cv.THRESH_BINARY)
 		img_gray = cv.Canny(img_gray, 100, 200)
-		_, thresh = cv.threshold(img_gray, 127, 255, 0)
 
-		contours, _ = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-
+		contours, _ = cv.findContours(img_gray, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
+		print(contours)
 		cv.drawContours(draw_img, contours, -1, (0, 255, 0), 3)
+
+		mask = np.zeros(img_gray.shape, dtype=np.uint8)
+		c = np.array([[it[0][0]] for it in contours], dtype=np.int32)
+		cv.drawContours(mask, [c], 0, 1, -1)
+		# pts = cv2.findNonZero(mask)
+		pixel_points = cv.bitwise_and(img, img, mask=mask)
 
 		# Display the resulting frame
 		cv.imshow('frame', draw_img)
-		# cv.imshow('frame_gray', img_gray)
+		cv.imshow('frame_clone', pixel_points)
+		cv.imshow('frame_gray', img_gray)
 
 		key = cv.waitKey(1)
-		if key == ord('q'):
+		if key == ord('q') or key == 27:
 			break
 
 		if key == ord('s'):
 			directory = "."
 			file_endings = [int(re.findall('\\d+', filename)[0]) for filename in os.listdir(directory) if filename[-len('.png'):] == '.png']
 			if not file_endings:
-				largest_ending = 0
+				largest_ending = -1
 			else:
 				largest_ending = max(file_endings)
 

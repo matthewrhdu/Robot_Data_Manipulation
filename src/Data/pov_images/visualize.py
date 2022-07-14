@@ -24,7 +24,7 @@ def run_ransac(pcd: np.ndarray, threshold: float, ransac_n: int = 3, num_iterati
 
 
 def main(d_type=False):
-    data = np.load(f"images2/img_combined.npy")
+    data = np.load(f"images2/image0.npy")
     ins, outs = run_ransac(data, 0.02)
 
     if d_type:

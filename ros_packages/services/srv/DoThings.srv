@@ -2,4 +2,5 @@ int64 stuff
 ---
 float64 dx
 float64 dy
-float64 dtheta
+float64 dz # Optional
+float64 dtheta # Optional

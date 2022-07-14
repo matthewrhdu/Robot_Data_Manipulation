@@ -25,19 +25,20 @@ def run_ransac(pcd: np.ndarray, threshold: float, ransac_n: int = 3, num_iterati
 
 
 def main():
-    data = np.load(f"image4_cleaned.npy")
-    outs, ins = run_ransac(data, 0.01)
-    # outs = data
+    for i in range(5):
+        data = np.load(f"image{i}_cleaned.npy")
+        outs, ins = run_ransac(data, 0.01)
+        # outs = data
 
-    out_cloud = o3d.geometry.PointCloud()
-    out_cloud.points = o3d.utility.Vector3dVector(outs)
-    out_cloud.paint_uniform_color([0, 0, 1])
+        out_cloud = o3d.geometry.PointCloud()
+        out_cloud.points = o3d.utility.Vector3dVector(outs)
+        out_cloud.paint_uniform_color([0, 0, 1])
 
-    in_cloud = o3d.geometry.PointCloud()
-    in_cloud.points = o3d.utility.Vector3dVector(ins)
-    in_cloud.paint_uniform_color([0.3, 0.8, 1])
+        in_cloud = o3d.geometry.PointCloud()
+        in_cloud.points = o3d.utility.Vector3dVector(ins)
+        in_cloud.paint_uniform_color([0.3, 0.8, 1])
 
-    o3d.visualization.draw_geometries([out_cloud, in_cloud])
+        o3d.visualization.draw_geometries([out_cloud, in_cloud])
     # np.save(f"image{i}_ransaced_cleaned.npy", outs)
 
 

@@ -70,7 +70,7 @@ def merge_sort(lst: List[np.ndarray]) -> List[np.ndarray]:
         return _merge(left_sorted, right_sorted)
 
 
-def write_point_clouds(first: o3d.geometry.PointCloud, second: o3d.geometry.PointCloud) -> None:
+def write_point_clouds(first: o3d.geometry.PointCloud, second: o3d.geometry.PointCloud) -> np.ndarray:
     """ Write the point clouds first and second appended together to disk
 
     :param first: The first point cloud
@@ -90,7 +90,8 @@ def write_point_clouds(first: o3d.geometry.PointCloud, second: o3d.geometry.Poin
 
     write_arr = np.asarray(write_arr)
     print(f"writing: {len(write_arr)}")
-    np.save("../Data/pov_images/images2/img_combined.npy", write_arr)
+    # np.save("../Data/pov_images/images2/img_combined.npy", write_arr)
+    return write_arr
 
 
 def draw_registration_result(source: o3d.geometry.PointCloud, target: o3d.geometry.PointCloud,
@@ -114,7 +115,7 @@ def draw_registration_result(source: o3d.geometry.PointCloud, target: o3d.geomet
 
 
 def draw_and_save_registration_result(source: o3d.geometry.PointCloud, target: o3d.geometry.PointCloud,
-                                      transformation: np.ndarray) -> None:
+                                      transformation: np.ndarray) -> np.ndarray:
     """ Draw and save the point clouds for visualization purposes
 
     :param source: The point cloud of the source
@@ -123,7 +124,7 @@ def draw_and_save_registration_result(source: o3d.geometry.PointCloud, target: o
     :return: None
     """
     draw_registration_result(source, target, transformation)
-    write_point_clouds(source, target)
+    return write_point_clouds(source, target)
 
 
 def preprocess_point_cloud(pcd: o3d.geometry.PointCloud, voxel_size: float) -> Tuple[o3d.geometry.PointCloud,
@@ -201,7 +202,7 @@ def refine_registration(source, target, source_fpfh, target_fpfh, voxel_size, re
     return result
 
 
-def main(filename_1: str, filename_2: str, voxel_size: float = 0.005):
+def main(filename_1: str, filename_2: str, voxel_size: float = 0.005) -> np.ndarray:
     source, target, source_down, target_down, source_fpfh, target_fpfh = prepare_dataset(voxel_size, filename_1, filename_2)
 
     result_ransac = execute_global_registration(source_down, target_down, source_fpfh, target_fpfh, voxel_size)
@@ -210,7 +211,7 @@ def main(filename_1: str, filename_2: str, voxel_size: float = 0.005):
 
     result_icp = refine_registration(source, target, source_fpfh, target_fpfh, voxel_size, result_ransac)
     print(result_icp)
-    draw_and_save_registration_result(source, target, result_icp.transformation)
+    return draw_and_save_registration_result(source, target, result_icp.transformation)
 
 
 if __name__ == "__main__":
